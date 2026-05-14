@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TensorFlow波士顿房价预测代码逻辑分析</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        .mermaid-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .network-structure {
+            text-align: center;
+            background: #e8f4fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+        .code-explanation {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TensorFlow波士顿房价预测代码逻辑分析</h1>
+
+        <div class="highlight">
+            <strong>核心目标：</strong>使用TensorFlow构建神经网络，对波士顿房价数据集进行回归预测
+        </div>
+
+        <h2>📊 整体流程图</h2>
+        <div class="mermaid-container">
+            <svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                <!-- 定义箭头标记 -->
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7"
+                           refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#3498db" />
+                    </marker>
+                </defs>
+
+                <!-- 主流程节点 -->
+                <rect x="300" y="50" width="200" height="40" rx="8" fill="#3498db" stroke="#2980b9" stroke-width="2"/>
+                <text x="400" y="75" text-anchor="middle" fill="white" font-size="14" font-weight="bold">数据加载</text>
+
+                <rect x="300" y="120" width="200" height="40" rx="8" fill="#e74c3c" stroke="#c0392b" stroke-width="2"/>
+                <text x="400" y="145" text-anchor="middle" fill="white" font-size="14" font-weight="bold">数据预处理</text>
+
+                <rect x="300" y="190" width="200" height="40" rx="8" fill="#2ecc71" stroke="#27ae60" stroke-width="2"/>
+                <text x="400" y="215" text-anchor="middle" fill="white" font-size="14" font-weight="bold">模型构建</text>
+
+                <rect x="300" y="260" width="200" height="40" rx="8" fill="#f39c12" stroke="#e67e22" stroke-width="2"/>
+                <text x="400" y="285" text-anchor="middle" fill="white" font-size="14" font-weight="bold">模型训练</text>
+
+                <rect x="300" y="330" width="200" height="40" rx="8" fill="#9b59b6" stroke="#8e44ad" stroke-width="2"/>
+                <text x="400" y="355" text-anchor="middle" fill="white" font-size="14" font-weight="bold">模型评估</text>
+
+                <rect x="300" y="400" width="200" height="40" rx="8" fill="#1abc9c" stroke="#16a085" stroke-width="2"/>
+                <text x="400" y="425" text-anchor="middle" fill="white" font-size="14" font-weight="bold">结果可视化</text>
+
+                <!-- 连接线 -->
+                <line x1="400" y1="90" x2="400" y2="120" stroke="#3498db" stroke-width="3" marker-end="url(#arrowhead)"/>
+                <line x1="400" y1="160" x2="400" y2="190" stroke="#e74c3c" stroke-width="3" marker-end="url(#arrowhead)"/>
+                <line x1="400" y1="230" x2="400" y2="260" stroke="#2ecc71" stroke-width="3" marker-end="url(#arrowhead)"/>
+                <line x1="400" y1="300" x2="400" y2="330" stroke="#f39c12" stroke-width="3" marker-end="url(#arrowhead)"/>
+                <line x1="400" y1="370" x2="400" y2="400" stroke="#9b59b6" stroke-width="3" marker-end="url(#arrowhead)"/>
+                <line x1="400" y1="440" x2="400" y2="470" stroke="#1abc9c" stroke-width="3" marker-end="url(#arrowhead)"/>
+
+                <!-- 子节点 -->
+                <rect x="50" y="480" width="150" height="30" rx="5" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1"/>
+                <text x="125" y="498" text-anchor="middle" fill="#2c3e50" font-size="12">读取housing.csv</text>
+
+                <rect x="220" y="480" width="150" height="30" rx="5" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1"/>
+                <text x="295" y="498" text-anchor="middle" fill="#2c3e50" font-size="12">MinMax归一化</text>
+
+                <rect x="390" y="480" width="150" height="30" rx="5" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1"/>
+                <text x="465" y="498" text-anchor="middle" fill="#2c3e50" font-size="12">训练测试分割</text>
+
+                <rect x="560" y="480" width="150" height="30" rx="5" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1"/>
+                <text x="635" y="498" text-anchor="middle" fill="#2c3e50" font-size="12">Sequential API</text>
+
+                <!-- 连接子节点 -->
+                <line x1="125" y1="450" x2="125" y2="480" stroke="#7f8c8d" stroke-width="2"/>
+                <line x1="295" y1="450" x2="295" y2="480" stroke="#7f8c8d" stroke-width="2"/>
+                <line x1="465" y1="450" x2="465" y2="480" stroke="#7f8c8d" stroke-width="2"/>
+                <line x1="635" y1="450" x2="635" y2="480" stroke="#7f8c8d" stroke-width="2"/>
+            </svg>
+        </div>
+
+        <h2>🏗️ 神经网络结构</h2>
+        <div class="network-structure">
+            <h3>13 → 16 → 1 全连接网络</h3>
+            <div style="font-size: 18px; margin: 20px 0;">
+                <strong>输入层 (13个特征)</strong> →
+                <strong>隐藏层 (16个神经元 + ReLU)</strong> →
+                <strong>输出层 (1个神经元 + 线性)</strong>
+            </div>
+            <p><strong>激活函数：</strong>隐藏层使用ReLU，输出层使用线性激活（回归任务）</p>
+            <p><strong>参数总量：</strong>13×16 + 16×1 + 16 + 1 = 241个参数</p>
+        </div>
+
+        <h2>🔄 详细执行流程</h2>
+
+        <h3>1. 数据准备阶段</h3>
+        <div class="code-explanation">
+            <strong>数据加载：</strong>pandas读取housing.csv，无表头，空格分隔<br>
+            <strong>数据形状：</strong>506样本 × 13特征 + 1目标变量<br>
+            <strong>特征归一化：</strong>MinMaxScaler将特征缩放到[0,1]区间<br>
+            <strong>数据集分割：</strong>75%训练集，25%测试集，随机种子42保证可重现
+        </div>
+
+        <h3>2. 模型构建阶段</h3>
+        <div class="code-explanation">
+            <strong>API选择：</strong>TensorFlow Keras Sequential API<br>
+            <strong>网络架构：</strong>tf.keras.layers.Dense(16, activation='relu', input_shape=(13,))<br>
+            <strong>输出层：</strong>tf.keras.layers.Dense(1) - 线性激活用于回归<br>
+            <strong>编译配置：</strong>Adam优化器(学习率0.01) + MSE损失 + MAE指标
+        </div>
+
+        <h3>3. 训练阶段</h3>
+        <div class="code-explanation">
+            <strong>训练参数：</strong>300 epochs，batch_size=32<br>
+            <strong>验证策略：</strong>训练集中20%作为验证集<br>
+            <strong>监控指标：</strong>训练损失、验证损失、MAE<br>
+            <strong>输出模式：</strong>verbose=1显示详细训练过程
+        </div>
+
+        <h3>4. 评估阶段</h3>
+        <div class="code-explanation">
+            <strong>测试预测：</strong>model.predict(test_x)生成预测结果<br>
+            <strong>性能指标：</strong>计算测试集MSE和MAE<br>
+            <strong>样本分析：</strong>展示前10个测试样本的预测详情
+        </div>
+
+        <h3>5. 可视化阶段</h3>
+        <div class="code-explanation">
+            <strong>损失曲线：</strong>训练损失 vs 验证损失随epoch变化<br>
+            <strong>预测散点图：</strong>真实房价 vs 预测房价，理想对角线<br>
+            <strong>字体配置：</strong>中文字体设置解决显示乱码问题
+        </div>
+
+        <h2>📈 关键技术要点</h2>
+
+        <div class="mermaid-container">
+            <svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+                <!-- 中心节点 -->
+                <circle cx="400" cy="50" r="40" fill="#3498db" stroke="#2980b9" stroke-width="3"/>
+                <text x="400" y="58" text-anchor="middle" fill="white" font-size="14" font-weight="bold">技术要点</text>
+
+                <!-- 第一级分支 -->
+                <circle cx="200" cy="150" r="35" fill="#e74c3c" stroke="#c0392b" stroke-width="2"/>
+                <text x="200" y="158" text-anchor="middle" fill="white" font-size="12" font-weight="bold">数据预处理</text>
+
+                <circle cx="400" cy="150" r="35" fill="#2ecc71" stroke="#27ae60" stroke-width="2"/>
+                <text x="400" y="158" text-anchor="middle" fill="white" font-size="12" font-weight="bold">网络设计</text>
+
+                <circle cx="600" cy="150" r="35" fill="#f39c12" stroke="#e67e22" stroke-width="2"/>
+                <text x="600" y="158" text-anchor="middle" fill="white" font-size="12" font-weight="bold">训练策略</text>
+
+                <circle cx="400" cy="250" r="35" fill="#9b59b6" stroke="#8e44ad" stroke-width="2"/>
+                <text x="400" y="258" text-anchor="middle" fill="white" font-size="12" font-weight="bold">模型评估</text>
+
+                <!-- 连接线 -->
+                <line x1="400" y1="90" x2="200" y2="115" stroke="#3498db" stroke-width="3"/>
+                <line x1="400" y1="90" x2="400" y2="115" stroke="#3498db" stroke-width="3"/>
+                <line x1="400" y1="90" x2="600" y2="115" stroke="#3498db" stroke-width="3"/>
+                <line x1="400" y1="190" x2="400" y2="215" stroke="#3498db" stroke-width="3"/>
+
+                <!-- 第二级分支 - 数据预处理 -->
+                <circle cx="100" cy="250" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="100" y="257" text-anchor="middle" fill="#2c3e50" font-size="10">归一化</text>
+
+                <circle cx="200" cy="250" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="200" y="257" text-anchor="middle" fill="#2c3e50" font-size="10">分割</text>
+
+                <circle cx="300" cy="250" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="300" y="257" text-anchor="middle" fill="#2c3e50" font-size="10">重塑</text>
+
+                <!-- 第二级分支 - 网络设计 -->
+                <circle cx="350" cy="350" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="350" y="357" text-anchor="middle" fill="#2c3e50" font-size="10">隐藏层</text>
+
+                <circle cx="450" cy="350" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="450" y="357" text-anchor="middle" fill="#2c3e50" font-size="10">ReLU</text>
+
+                <circle cx="550" cy="350" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="550" y="357" text-anchor="middle" fill="#2c3e50" font-size="10">输出层</text>
+
+                <!-- 第二级分支 - 训练策略 -->
+                <circle cx="650" cy="250" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="650" y="257" text-anchor="middle" fill="#2c3e50" font-size="10">Adam</text>
+
+                <circle cx="700" cy="200" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="700" y="207" text-anchor="middle" fill="#2c3e50" font-size="10">MSE</text>
+
+                <circle cx="700" cy="300" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="700" y="307" text-anchor="middle" fill="#2c3e50" font-size="10">批量</text>
+
+                <!-- 第二级分支 - 模型评估 -->
+                <circle cx="300" cy="400" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="300" y="407" text-anchor="middle" fill="#2c3e50" font-size="10">测试</text>
+
+                <circle cx="400" cy="400" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="400" y="407" text-anchor="middle" fill="#2c3e50" font-size="10">指标</text>
+
+                <circle cx="500" cy="400" r="25" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2"/>
+                <text x="500" y="407" text-anchor="middle" fill="#2c3e50" font-size="10">图表</text>
+
+                <!-- 连接第二级分支 -->
+                <line x1="200" y1="185" x2="100" y2="225" stroke="#e74c3c" stroke-width="2"/>
+                <line x1="200" y1="185" x2="200" y2="225" stroke="#e74c3c" stroke-width="2"/>
+                <line x1="200" y1="185" x2="300" y2="225" stroke="#e74c3c" stroke-width="2"/>
+
+                <line x1="400" y1="185" x2="350" y2="325" stroke="#2ecc71" stroke-width="2"/>
+                <line x1="400" y1="185" x2="450" y2="325" stroke="#2ecc71" stroke-width="2"/>
+                <line x1="400" y1="185" x2="550" y2="325" stroke="#2ecc71" stroke-width="2"/>
+
+                <line x1="600" y1="185" x2="650" y2="225" stroke="#f39c12" stroke-width="2"/>
+                <line x1="600" y1="185" x2="700" y2="175" stroke="#f39c12" stroke-width="2"/>
+                <line x1="600" y1="185" x2="700" y2="275" stroke="#f39c12" stroke-width="2"/>
+
+                <line x1="400" y1="285" x2="300" y2="375" stroke="#9b59b6" stroke-width="2"/>
+                <line x1="400" y1="285" x2="400" y2="375" stroke="#9b59b6" stroke-width="2"/>
+                <line x1="400" y1="285" x2="500" y2="375" stroke="#9b59b6" stroke-width="2"/>
+            </svg>
+        </div>
+
+        <h2>🎯 性能预期</h2>
+        <div class="code-explanation">
+            <strong>典型结果：</strong><br>
+            • 测试集MSE: ~15-25 (取决于随机初始化)<br>
+            • 测试集MAE: ~2.5-4.0 (平均预测误差)<br>
+            • 收敛速度: 通常在50-100 epochs内达到较好性能<br>
+            • 过拟合控制: 通过验证集监控损失变化
+        </div>
+
+        <h2>🔧 代码特点</h2>
+        <div class="code-explanation">
+            <strong>简洁性：</strong>使用Keras高层API，代码简洁易懂<br>
+            <strong>完整性：</strong>包含数据处理、训练、评估、可视化全流程<br>
+            <strong>实用性：</strong>适合教学和快速原型开发<br>
+            <strong>可扩展性：</strong>易于修改网络结构、超参数等
+        </div>
+    </div>
+</body>
+</html>

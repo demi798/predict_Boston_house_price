@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Mermaid Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        .mermaid-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mermaid Syntax Test</h1>
+
+    <h2>Flowchart Test</h2>
+    <div class="mermaid-container">
+        <div class="mermaid">
+            graph TD
+                A[Data Loading] --> B[Data Preprocessing]
+                B --> C[Model Building]
+                C --> D[Model Training]
+                D --> E[Model Evaluation]
+                E --> F[Results Visualization]
+        </div>
+    </div>
+
+    <h2>Mindmap Test</h2>
+    <div class="mermaid-container">
+        <div class="mermaid">
+            mindmap
+              root((Key Points))
+                DataPrep
+                  Normalization
+                  Split
+                  Reshape
+                Network
+                  HiddenLayer
+                  ReLU
+                  Output
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default'
+        });
+    </script>
+</body>
+</html>
